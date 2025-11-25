@@ -14,22 +14,20 @@
     <!-- Ícones (Phosphor Icons) -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
-    <!-- NOVO: Leaflet.js CSS (Para o Mapa) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
+    <!-- Leaflet CSS (Mapa Interativo) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
     <style>
         /* --- 1. Configurações Globais e Variáveis --- */
         :root {
-            --primary: #FFD60A; /* Amarelo */
+            --primary: #FFD60A; /* Amarelo Let's Fui */
             --secondary: #0E0E0E; /* Preto */
             --white: #FFFFFF;
             --grey-light: #f5f5f5;
             --grey-mid: #b0b0b0;
             --grey-dark: #757575;
             --font-family: 'Poppins', sans-serif;
-            --nav-height: 70px; /* Altura da navbar */
+            --nav-height: 80px; /* Aumentado ligeiramente para o botão central */
         }
 
         * {
@@ -112,12 +110,19 @@
             transform: translateX(-30px);
             z-index: 1;
         }
-        
-        /* A página do mapa não tem padding superior para o mapa preencher */
-        #page-mapa {
-            padding: 0 0 var(--nav-height) 0;
-        }
 
+        /* Transição especial para o cardápio (subir de baixo) */
+        .page.slide-up {
+            transform: translateY(100%);
+            opacity: 1;
+            z-index: 50; /* Acima de tudo */
+        }
+        .page.slide-up.active {
+            transform: translateY(0);
+        }
+        .page.slide-up.exit {
+            transform: translateY(100%);
+        }
 
         /* --- 4. Componentes Reutilizáveis --- */
 
@@ -130,10 +135,20 @@
             font-weight: 700;
             color: var(--secondary);
             gap: 5px;
+            position: relative; /* Para posicionar botão de voltar */
         }
         .app-header i {
             font-size: 28px;
             color: var(--primary);
+        }
+        /* Botão voltar no header */
+        .header-back-btn {
+            position: absolute;
+            left: 0;
+            font-size: 24px !important;
+            color: var(--secondary) !important;
+            cursor: pointer;
+            padding: 5px;
         }
 
         .search-bar {
@@ -181,6 +196,18 @@
         .btn-block {
             display: block;
             width: 100%;
+        }
+        
+        /* Botão específico "Ver Cardápio" (Amarelo) */
+        .btn-ver-cardapio {
+            background: var(--primary); /* CTA Principal */
+            color: var(--secondary);
+            font-weight: 700;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .section-title {
@@ -236,7 +263,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* --- 6. Navbar Inferior --- */
+        /* --- 6. Navbar Inferior (MODIFICADO PARA O ESTILO SOLICITADO) --- */
 
         #bottom-navbar {
             position: absolute;
@@ -245,43 +272,84 @@
             width: 100%;
             height: var(--nav-height);
             background: var(--white);
-            border-top: 1px solid var(--grey-light);
+            border-top: 1px solid #f0f0f0; /* Borda mais sutil */
             display: flex;
-            justify-content: space-around;
-            align-items: flex-start; /* Alinha no topo da navbar */
-            padding-top: 10px;
+            justify-content: space-between;
+            align-items: center;
             z-index: 100;
             box-shadow: 0 -5px 20px rgba(0,0,0,0.03);
+            padding: 0 10px;
+            overflow: visible; /* Permite que o botão central "saia" para fora */
         }
+
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             cursor: pointer;
             gap: 4px;
             color: var(--grey-dark);
             transition: color 0.2s ease;
-        }
-        .nav-item i {
-            font-size: 24px; /* Reduzido */
-            transition: all 0.2s ease;
-            /* Removido padding e border-radius */
-        }
-        .nav-item span {
-            font-size: 10px;
-            font-weight: 600;
+            flex: 1; /* Distribui o espaço igualmente */
+            height: 100%;
+            position: relative;
         }
 
-        /* Estilo do item ATIVO (Modificado) */
-        .nav-item.active {
-            color: var(--primary); /* Cor primária para ícone e texto */
+        /* Estilos para os ícones normais */
+        .nav-item i {
+            font-size: 26px;
+            transition: all 0.2s ease;
+            color: var(--grey-dark);
         }
-        /* Removido .nav-item.active i (fundo amarelo) */
+        .nav-item span {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--grey-dark);
+        }
+
+        /* Estado ativo para itens normais (fica amarelo) */
+        .nav-item.active:not(.center) i,
+        .nav-item.active:not(.center) span {
+            color: var(--primary);
+        }
+
+        /* --- Estilo do Item Central (Mapa) --- */
+        .nav-item.center {
+            flex: 0 0 auto; /* Não estica */
+            width: 80px; /* Largura fixa para o container central */
+            top: -25px; /* Move para cima para o efeito de "flutuar" */
+        }
+
+        /* O círculo amarelo */
+        .nav-center-circle {
+            width: 64px;
+            height: 64px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1); /* Sombra suave */
+            /* A borda branca grossa cria o efeito de recorte na navbar */
+            border: 6px solid var(--white); 
+            margin-bottom: 4px; /* Espaço entre o círculo e o texto */
+        }
+
+        /* Ícone dentro do círculo amarelo (preto) */
+        .nav-item.center i {
+            font-size: 30px;
+            color: var(--secondary); /* Ícone preto */
+        }
+        
+        /* Texto do item central */
+        .nav-item.center span {
+            color: var(--secondary); /* Texto preto */
+        }
 
 
         /* --- 7. Tela 1: Explorar --- */
 
-        /* --- 7b. Banner Carousel --- */
         .banner-carousel {
             width: 100%;
             height: 140px;
@@ -304,7 +372,6 @@
             background-position: center;
             position: relative;
         }
-        /* Sombra interna para legibilidade do texto */
         .carousel-slide::after {
             content: '';
             position: absolute;
@@ -358,12 +425,11 @@
             overflow-x: auto;
             padding-bottom: 10px; /* Espaço para sombra */
             margin-bottom: 20px;
-            /* Esconde a scrollbar */
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
         .filter-bar::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
+            display: none;
         }
         .filter-item {
             display: flex;
@@ -377,7 +443,7 @@
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
-            white-space: nowrap; /* Impede quebra de linha */
+            white-space: nowrap;
         }
         .filter-item i {
             font-size: 16px;
@@ -400,13 +466,10 @@
             background: var(--white);
             box-shadow: 0 6px 25px rgba(0,0,0,0.06);
             overflow: hidden;
-            transition: transform 0.2s ease;
-            /* Adicionado para lógica de filtro */
             transition: opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease, margin 0.3s ease;
             max-height: 500px;
             opacity: 1;
         }
-        /* Classe para esconder item filtrado */
          .establishment-card.hidden {
             opacity: 0;
             max-height: 0;
@@ -459,14 +522,12 @@
             font-size: 13px;
             color: var(--grey-dark);
             margin-bottom: 15px;
-            /* Limita a 2 linhas */
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;  
             overflow: hidden;
         }
 
-        /* --- NOVO: Ações do Card --- */
         .card-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -482,36 +543,16 @@
             justify-content: center;
             gap: 6px;
         }
-        /* Botão de cupom em destaque */
         .card-actions .btn-open-coupons {
-            grid-column: 1 / -1; /* Ocupa a largura toda */
+            grid-column: 1 / -1; 
         }
-        /* --- FIM: Ações do Card --- */
 
 
         /* --- 8. Tela 2: Mapa --- */
 
-        /* Header customizado para o Mapa - AGORA É ABSOLUTO */
         #page-mapa .app-header {
-            /* Remove o padding da página do mapa */
-            padding: 20px 20px 0 20px;
-            margin-bottom: 0;
-            /* NOVO: Posicionamento flutuante */
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 10; /* Acima do mapa */
-            /* Fundo com gradiente para legibilidade */
-            background: linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0.8) 80%, rgba(255,255,255,0) 100%);
-            /* Remove a interação de ponteiro do header, exceto botões */
-            pointer-events: none;
+            justify-content: space-between;
         }
-        #page-mapa .app-header > * {
-            /* Re-ativa ponteiro para os filhos */
-            pointer-events: all;
-        }
-
         .location-display {
             display: flex;
             align-items: center;
@@ -519,9 +560,8 @@
             font-size: 14px;
             font-weight: 500;
             padding: 8px 12px;
-            background: var(--white); /* Modificado de grey-light */
+            background: var(--grey-light);
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Adiciona sombra */
         }
         .location-display i {
             color: var(--primary);
@@ -529,132 +569,131 @@
         }
         .filter-button {
             padding: 8px;
-            background: var(--white); /* Modificado de grey-light */
+            background: var(--grey-light);
             border-radius: 10px;
             font-size: 20px;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Adiciona sombra */
-        }
-        .filter-button:active {
-            transform: scale(0.95);
         }
 
-        /* NOVO: Container do Mapa Leaflet */
-        #leaflet-map {
+        #map-container {
             width: 100%;
-            height: 100%; /* Ocupa a página inteira */
-            z-index: 5; /* Abaixo do header */
+            height: calc(100% - 100px);
+            background: #e8f8ec; /* Fallback */
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden; /* Importante para o Leaflet */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 1;
         }
 
-        /* NOVO: Customização do Popup Leaflet (Tema Let's Fui) */
-        .leaflet-popup-content-wrapper {
-            background-color: var(--white);
-            color: var(--secondary);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-        .leaflet-popup-content {
-            font-size: 14px;
-            text-align: left;
-            margin: 15px;
-            max-height: 200px; /* Limite de altura */
-            overflow-y: auto;
-            /* Scrollbar customizada (opcional) */
-            scrollbar-width: thin;
-            scrollbar-color: var(--primary) var(--grey-light);
-        }
-        .leaflet-popup-content::-webkit-scrollbar {
-            width: 5px;
-        }
-        .leaflet-popup-content::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 10px;
-        }
-        .leaflet-popup-content::-webkit-scrollbar-track {
-            background: var(--grey-light);
-        }
-        .leaflet-popup-tip {
-            background: var(--white);
-        }
-        .leaflet-container a.leaflet-popup-close-button {
-            color: var(--grey-dark);
-            padding: 8px 8px 0 0;
-            font-size: 18px;
-        }
-        .leaflet-popup-content h3 {
-            color: var(--secondary);
-            font-size: 16px;
-            font-weight: 700;
-            margin-top: 0;
-            margin-bottom: 10px;
-            text-align: left;
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 5px;
-        }
-        /* Estilo do card de evento (do BoraLá, adaptado) */
-        .popup-events-container {
+        /* Customização dos Pins no Leaflet (DivIcon) */
+        .custom-map-pin {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .event-card {
-            background-color: var(--grey-light);
-            padding: 10px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary); /* Borda amarela */
+            justify-content: center;
+            align-items: center;
             transition: transform 0.2s ease;
         }
-        .event-card:hover {
-            transform: scale(1.02);
+        .custom-map-pin i {
+            font-size: 36px;
+            color: var(--primary);
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
         }
-        .event-card h4 {
-            margin: 0 0 3px 0;
+        .custom-map-pin:hover {
+            transform: scale(1.1);
+            z-index: 1000 !important;
+        }
+        
+        /* Customização da Mancha de Calor no Leaflet */
+        .heatmap-pulse {
+            transform-origin: center;
+            animation: map-pulse 2.5s infinite ease-out;
+        }
+        @keyframes map-pulse {
+            0% { opacity: 0.7; r: 20; }
+            50% { opacity: 0.9; r: 25; }
+            100% { opacity: 0.7; r: 20; }
+        }
+
+
+        #heatmap-popup {
+            position: absolute;
+            background: var(--white);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 2000; /* Acima do Leaflet */
+            display: none;
+            width: 200px;
+            border: 2px solid var(--primary);
+            transition: opacity 0.2s ease;
+        }
+        #heatmap-popup h4 {
+            font-size: 14px;
+            font-weight: 700;
             color: var(--secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        #heatmap-popup h4 i { color: #f97316; }
+        #heatmap-popup-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        #heatmap-popup-list li {
             font-size: 13px;
+            color: var(--grey-dark);
+            padding-bottom: 5px;
+            font-weight: 500;
+        }
+        #heatmap-popup-list li strong {
+            color: var(--secondary);
+        }
+
+        .pin-popup {
+            position: absolute;
+            bottom: -100%;
+            left: 10px;
+            right: 10px;
+            background: var(--white);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: bottom 0.3s ease-out;
+            z-index: 2000; /* Garantir que fique acima do mapa */
+        }
+        .pin-popup.show {
+            bottom: 10px;
+        }
+        .popup-image {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+        }
+        .popup-info h4 {
+            font-size: 14px;
             font-weight: 600;
         }
-        .event-card p {
-            margin: 0;
+        .popup-info p {
             font-size: 12px;
             color: var(--grey-dark);
         }
-
-        /* NOVO: Marcador de Localização do Usuário (Tema Let's Fui) */
-        .lets-fui-user-marker {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background-color: var(--primary); /* Amarelo */
-            border: 3px solid var(--white);
-            box-shadow: 0 0 15px var(--primary), 0 0 20px rgba(255, 214, 10, 0.8);
-            animation: pulsar-marcador-fui 2s infinite ease-in-out;
+        .popup-action {
+            margin-left: auto;
+            flex-shrink: 0;
         }
-
-        @keyframes pulsar-marcador-fui {
-            0% {
-                transform: scale(0.9);
-                box-shadow: 0 0 0 0 rgba(255, 214, 10, 0.7);
-            }
-            70% {
-                transform: scale(1.1);
-                box-shadow: 0 0 10px 15px rgba(255, 214, 10, 0);
-            }
-            100% {
-                transform: scale(0.9);
-                box-shadow: 0 0 0 0 rgba(255, 214, 10, 0);
-            }
+        .btn-popup {
+            padding: 8px 12px;
+            font-size: 12px;
         }
-        
-        /* Animação do Heatmap */
-        .leaflet-heatmap-layer {
-            animation: pulsar-calor-fui 4s infinite alternate;
-        }
-        @keyframes pulsar-calor-fui {
-            0% { opacity: 0.6; }
-            100% { opacity: 0.9; }
-        }
-        /* --- FIM DOS ESTILOS DO MAPA --- */
-        
 
         /* --- 9. Tela 3: Clube Let's Fui --- */
         
@@ -686,11 +725,11 @@
             overflow: hidden;
         }
         .progress-fill {
-            width: 0%; /* JS vai animar isso */
+            width: 0%;
             height: 100%;
             background: var(--primary);
             border-radius: 10px;
-            transition: width 1s cubic-bezier(0.25, 1, 0.5, 1); /* Animação suave */
+            transition: width 1s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .progress-labels {
             display: flex;
@@ -753,19 +792,16 @@
 
         /* --- 10. Tela 4: Feed (Social) --- */
         
-        /* Fundo amarelo para a página do feed */
         #page-feed {
-            background-color: var(--white); /* MUDADO DE VOLTA */
+            background-color: var(--white);
         }
 
-        /* Adicionando Stories de volta */
         .stories-bar {
             display: flex;
             gap: 15px;
             overflow-x: auto;
             padding: 5px 0 15px 0;
             margin-bottom: 20px;
-            /* Esconde a scrollbar */
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
@@ -782,35 +818,33 @@
             width: 65px;
             height: 65px;
             border-radius: 50%;
-            border: 3px solid var(--primary); /* Borda amarela */
-            padding: 2px; /* Espaço entre borda e imagem */
-            background-clip: content-box; /* Borda não cobre a imagem */
+            border: 3px solid var(--primary);
+            padding: 2px;
+            background-clip: content-box;
             background-size: cover;
             background-position: center;
-            background-color: var(--white); /* Fundo branco caso a imagem falhe */
+            background-color: var(--white);
         }
         .story-item span {
             font-size: 11px;
-            font-weight: 600; /* Mais forte */
-            color: var(--secondary); /* Texto preto */
+            font-weight: 600;
+            color: var(--secondary);
         }
-        /* Fim Stories */
-
 
         .feed-list {
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Espaço entre os balões */
+            gap: 15px;
         }
 
         .tweet-post {
             display: flex;
             gap: 15px;
-            background-color: var(--white); /* MUDADO (Balão branco) */
+            background-color: var(--white);
             border-radius: 16px;
             padding: 15px;
-            border: 1px solid var(--grey-light); /* ADICIONADO */
-            box-shadow: none; /* REMOVIDO */
+            border: 1px solid var(--grey-light);
+            box-shadow: none;
         }
         .tweet-avatar {
             width: 45px;
@@ -845,9 +879,9 @@
             line-height: 1.5;
             color: var(--secondary);
             margin-bottom: 15px;
-            word-wrap: break-word; /* Garante quebra de linha */
+            word-wrap: break-word;
         }
-        .tweet-text strong { /* for @mentions */
+        .tweet-text strong {
             color: #000;
         }
         .tweet-actions {
@@ -856,9 +890,9 @@
             align-items: center;
             color: var(--secondary);
             opacity: 0.8;
-            max-width: 250px; /* Impede que se espalhe demais */
+            max-width: 250px;
         }
-        .tweet-actions .action-btn { /* Classe genérica para botões de ação */
+        .tweet-actions .action-btn {
             display: flex;
             align-items: center;
             gap: 5px;
@@ -870,7 +904,7 @@
         .tweet-actions .action-btn i {
             font-size: 20px;
         }
-        .tweet-actions .action-like.liked { /* Específico para like */
+        .tweet-actions .action-like.liked {
             color: #ff3b30;
         }
         .tweet-actions .action-like.liked i {
@@ -881,32 +915,10 @@
         /* --- 11. Tela 5: Perfil --- */
 
         .profile-header {
-            position: relative; /* Para o botão de editar */
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 30px;
-        }
-        /* NOVO: Botão de editar no profile header */
-        .btn-icon-header {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background: var(--grey-light);
-            color: var(--secondary);
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s ease;
-        }
-        .btn-icon-header:active {
-            background: #e0e0e0;
         }
         .avatar {
             width: 70px;
@@ -983,15 +995,11 @@
 
         #notification-toast {
             position: fixed;
-            /* Posicionado acima da navbar */
             bottom: calc(var(--nav-height) + 15px);
             left: 20px;
             right: 20px;
-            
-            /* Ajuste para o container do app */
             max-width: calc(450px - 40px);
             margin: 0 auto;
-            
             background: var(--secondary);
             color: var(--white);
             padding: 15px;
@@ -1000,8 +1008,6 @@
             font-size: 13px;
             font-weight: 500;
             line-height: 1.4;
-            
-            /* Animação */
             transform: translateY(200%);
             opacity: 0;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -1024,11 +1030,9 @@
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
             z-index: 900;
-            
             display: flex;
             justify-content: center;
             align-items: center;
-            
             opacity: 0;
             visibility: hidden;
             transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -1040,14 +1044,11 @@
 
         #modal-content {
             background: var(--white);
-            /* Ajuste para o container do app */
             width: calc(100% - 40px);
             max-width: calc(450px - 40px);
-            
             border-radius: 20px;
             padding: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            
             transform: scale(0.9);
             opacity: 0;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -1066,7 +1067,7 @@
         #modal-title {
             font-size: 20px;
             font-weight: 700;
-            width: 90%; /* Evita quebra de linha feia */
+            width: 90%; 
         }
         #modal-close {
             font-size: 28px;
@@ -1077,7 +1078,7 @@
             font-size: 14px;
             line-height: 1.6;
             color: var(--grey-dark);
-            max-height: 60vh; /* Limita altura em telas pequenas */
+            max-height: 60vh;
             overflow-y: auto;
         }
         #modal-body p {
@@ -1102,94 +1103,6 @@
             margin-top: 20px;
         }
         
-        /* NOVO: Estilos para o modal de perfil (Form, Listas) */
-        .profile-modal-bio {
-            font-size: 14px;
-            color: var(--grey-dark);
-            border-left: 3px solid var(--primary);
-            padding-left: 10px;
-            margin-bottom: 20px;
-            font-style: italic;
-        }
-
-        .check-in-list, .friend-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .check-in-item, .friend-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: var(--grey-light);
-            padding: 10px;
-            border-radius: 8px;
-        }
-        .check-in-item-icon {
-            width: 35px;
-            height: 35px;
-            flex-shrink: 0;
-            background: var(--primary);
-            color: var(--secondary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        .friend-item .avatar-small {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            background-size: cover;
-            background-position: center;
-        }
-
-        .check-in-item-info p, .friend-item-info p {
-            font-size: 14px;
-            font-weight: 600;
-            margin: 0;
-        }
-        .check-in-item-info span, .friend-item-info span {
-            font-size: 12px;
-            color: var(--grey-dark);
-            margin: 0;
-        }
-        .friend-item .btn {
-            margin-left: auto;
-            padding: 5px 10px;
-            font-size: 12px;
-        }
-
-        /* Form para Editar Perfil */
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--secondary);
-            margin-bottom: 5px;
-        }
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            font-size: 14px;
-            font-family: var(--font-family);
-            border: 1px solid var(--grey-mid);
-            border-radius: 8px;
-            background: var(--grey-light);
-        }
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        /* Estilo específico para QR Code no Modal */
         .qr-code-simulator {
             width: 100%;
             max-width: 200px;
@@ -1206,14 +1119,12 @@
             border: 5px solid var(--secondary);
             animation: qr-pulse 1.5s infinite;
         }
-
         @keyframes qr-pulse {
             0% { box-shadow: 0 0 0 0 rgba(14, 14, 14, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(14, 14, 14, 0); }
             100% { box-shadow: 0 0 0 0 rgba(14, 14, 14, 0); }
         }
 
-        /* --- NOVO: Estilos do Modal de Cupom --- */
         .coupon-list {
             display: flex;
             flex-direction: column;
@@ -1254,37 +1165,6 @@
             font-size: 12px;
         }
 
-        /* --- NOVO: Estilos do Modal de Cardápio --- */
-        .menu-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .menu-category {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--secondary);
-            margin-top: 10px;
-            padding-bottom: 5px;
-            border-bottom: 2px solid var(--primary);
-        }
-        .menu-list-item {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-        }
-        .menu-list-item span:first-child {
-            font-weight: 500;
-            color: var(--secondary);
-            padding-right: 10px;
-        }
-        .menu-list-item span:last-child {
-            font-weight: 600;
-            color: var(--grey-dark);
-            flex-shrink: 0;
-        }
-
-        /* --- NOVO: Estilos do QR Code Resgatado --- */
         .qr-code-display {
             display: flex;
             flex-direction: column;
@@ -1303,21 +1183,18 @@
             margin-top: 10px;
         }
 
-
-        /* --- 14. NOVO: Visualizador de Stories --- */
+        /* --- 14. Visualizador de Stories --- */
         #story-viewer {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            /* Ajuste para o container do app */
             max-width: 450px; 
             margin: 0 auto;
-            
             background: #0E0E0E;
-            z-index: 1001; /* Acima do modal */
-            display: none; /* Começa escondido */
+            z-index: 1001;
+            display: none;
             flex-direction: column;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -1326,7 +1203,6 @@
             display: flex;
             opacity: 1;
         }
-
         .story-progress-container {
             width: 100%;
             padding: 10px 10px 5px 10px;
@@ -1348,7 +1224,6 @@
             background: var(--white);
             border-radius: 2px;
         }
-        /* Animação da barra */
         #story-viewer.visible .story-progress-fill.filling {
             animation: fillStoryProgress 15s linear forwards;
         }
@@ -1356,15 +1231,13 @@
             from { width: 0%; }
             to { width: 100%; }
         }
-
-
         .story-header {
             display: flex;
             align-items: center;
             gap: 10px;
             padding: 20px 15px 10px 15px;
             position: absolute;
-            top: 10px; /* Abaixo da barra de progresso */
+            top: 10px;
             left: 0;
             width: 100%;
             z-index: 1002;
@@ -1390,7 +1263,6 @@
             cursor: pointer;
             text-shadow: 0 1px 3px rgba(0,0,0,0.5);
         }
-
         .story-image-content {
             flex: 1;
             width: 100%;
@@ -1410,9 +1282,115 @@
             text-shadow: 0 2px 5px rgba(0,0,0,0.7);
             line-height: 1.4;
         }
-        /* --- FIM: Visualizador de Stories --- */
+
+        /* --- 15. NOVO: Estilos do CARDÁPIO DIGITAL --- */
+        
+        /* Categoria (Título) */
+        .menu-category-header {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--secondary);
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 3px solid var(--primary); /* Destaque amarelo */
+            display: inline-block;
+        }
+
+        /* Lista de itens */
+        .menu-items-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-bottom: 40px;
+        }
+
+        /* Card Individual do Prato */
+        .menu-item-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            border: 1px solid var(--grey-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-item-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px; /* Redondo/Quadrado suave */
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            background-color: var(--grey-light);
+        }
+
+        .menu-item-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .menu-item-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+
+        .menu-item-desc {
+            font-size: 11px;
+            color: var(--grey-dark);
+            line-height: 1.4;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .menu-item-price {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary); /* Preço em amarelo */
+            text-shadow: 0px 0px 1px rgba(0,0,0,0.1); /* Leve contraste */
+            color: #dcb300; /* Amarelo um pouco mais escuro para leitura no branco */
+        }
+
+        /* Tag de Promoção */
+        .promo-tag {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--primary);
+            color: var(--secondary);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-bottom-left-radius: 10px;
+            box-shadow: -2px 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .empty-menu-msg {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--grey-dark);
+        }
+        .empty-menu-msg i {
+            font-size: 40px;
+            margin-bottom: 10px;
+            color: var(--grey-mid);
+        }
 
     </style>
+    
+    <!-- Scripts do Leaflet no final do head para garantir carregamento -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 </head>
 <body>
     <!-- Simulação da moldura do celular -->
@@ -1444,20 +1422,19 @@
                 <!-- Banners Rotativos -->
                 <div class="banner-carousel" id="banner-carousel">
                     <div class="carousel-wrapper" id="carousel-wrapper">
-                        <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
-                        <div class="carousel-slide" style="background-image: url('https://placehold.co/600x300/FFD60A/0E0E0E?text=Banner+Promo%C3%A7%C3%A3o+1')">
+                        <div class="carousel-slide" style="background-image: url('https://source.unsplash.com/random/600x300?bar,promo,neon')">
                             <div class="slide-content">
                                 <h3>Happy Hour em Dobro</h3>
                                 <p>No Bar Vileta, de seg. a qua.</p>
                             </div>
                         </div>
-                        <div class="carousel-slide" style="background-image: url('https://placehold.co/600x300/0E0E0E/FFFFFF?text=Banner+Evento+2')">
+                        <div class="carousel-slide" style="background-image: url('https://source.unsplash.com/random/600x300?live,music,event')">
                             <div class="slide-content">
                                 <h3>Festival de Inverno</h3>
                                 <p>Música ao vivo no Taquaral.</p>
                             </div>
                         </div>
-                        <div class="carousel-slide" style="background-image: url('https://placehold.co/600x300/757575/FFFFFF?text=Banner+Gourmet+3')">
+                        <div class="carousel-slide" style="background-image: url('https://source.unsplash.com/random/600x300?fancy,dining,restaurant')">
                              <div class="slide-content">
                                 <h3>Noite Italiana</h3>
                                 <p>Menu especial no Bellini.</p>
@@ -1493,13 +1470,15 @@
                 </div>
 
                 <div class="establishment-list">
+                    <!-- ADICIONADO: data-id para vincular ao cardápio -->
+                    
                     <!-- Card 1 -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
                     <article class="establishment-card" data-category="beber" 
+                             data-id="bar-vileta"
                              data-title="Bar Vileta" 
-                             data-img="https://placehold.co/600x400/0E0E0E/FFD60A?text=Bar+Vileta"
+                             data-img="https://source.unsplash.com/random/600x400?bar,interior,drinks"
                              data-desc="Um clássico do Cambuí. Chopp gelado, porções generosas e o melhor da gastronomia de boteco.">
-                        <div class="card-image" style="background-image: url('https://placehold.co/600x400/0E0E0E/FFD60A?text=Bar+Vileta')"></div>
+                        <div class="card-image" style="background-image: url('https://source.unsplash.com/random/600x400?bar,interior,drinks')"></div>
                         <div class="card-content">
                             <div class="card-tags">
                                 <span class="card-tag tag-category">🍸 Beber</span>
@@ -1507,7 +1486,6 @@
                             </div>
                             <h3 class="card-title">Bar Vileta</h3>
                             <p class="card-description">Um clássico do Cambuí. Chopp gelado, porções generosas e o melhor da gastronomia de boteco.</p>
-                            <!-- BOTÕES ATUALIZADOS -->
                             <div class="card-actions">
                                 <button class="btn btn-secondary btn-small btn-view-more"><i class="ph-fill ph-info"></i> Detalhes</button>
                                 <button class="btn btn-secondary btn-small btn-cardapio"><i class="ph-fill ph-book-open"></i> Cardápio</button>
@@ -1517,12 +1495,12 @@
                     </article>
 
                     <!-- Card 2 -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
                     <article class="establishment-card" data-category="comer"
+                             data-id="bellini"
                              data-title="Bellini Ristorante"
-                             data-img="https://placehold.co/600x400/8c1c0a/FFFFFF?text=Bellini+Ristorante"
+                             data-img="https://source.unsplash.com/random/600x400?italian,restaurant,interior"
                              data-desc="Alta gastronomia italiana dentro do Hotel Vitória. Ambiente sofisticado e pratos premiados.">
-                        <div class="card-image" style="background-image: url('https://placehold.co/600x400/8c1c0a/FFFFFF?text=Bellini+Ristorante')"></div>
+                        <div class="card-image" style="background-image: url('https://source.unsplash.com/random/600x400?italian,restaurant,interior')"></div>
                         <div class="card-content">
                             <div class="card-tags">
                                 <span class="card-tag tag-category">🍔 Comer</span>
@@ -1530,7 +1508,6 @@
                             </div>
                             <h3 class="card-title">Bellini Ristorante</h3>
                             <p class="card-description">Alta gastronomia italiana dentro do Hotel Vitória. Ambiente sofisticado e pratos premiados.</p>
-                            <!-- BOTÕES ATUALIZADOS -->
                             <div class="card-actions">
                                 <button class="btn btn-secondary btn-small btn-view-more"><i class="ph-fill ph-info"></i> Detalhes</button>
                                 <button class="btn btn-secondary btn-small btn-cardapio"><i class="ph-fill ph-book-open"></i> Cardápio</button>
@@ -1540,12 +1517,12 @@
                     </article>
                     
                     <!-- Card 3 -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
                     <article class="establishment-card" data-category="ar-livre"
+                             data-id="taquaral"
                              data-title="Parque Taquaral"
-                             data-img="https://placehold.co/600x400/4CAF50/FFFFFF?text=Parque+Taquaral"
+                             data-img="https://source.unsplash.com/random/600x400?park,lake,daytime"
                              data-desc="Lagoa, bondinho, planetário e muito verde. O ponto de encontro de Campinas para esportes e lazer.">
-                        <div class="card-image" style="background-image: url('https://placehold.co/600x400/4CAF50/FFFFFF?text=Parque+Taquaral')"></div>
+                        <div class="card-image" style="background-image: url('https://source.unsplash.com/random/600x400?park,lake,daytime')"></div>
                         <div class="card-content">
                             <div class="card-tags">
                                 <span class="card-tag tag-category">🌳 Ar Livre</span>
@@ -1553,7 +1530,6 @@
                             </div>
                             <h3 class="card-title">Parque Taquaral</h3>
                             <p class="card-description">Lagoa, bondinho, planetário e muito verde. O ponto de encontro de Campinas para esportes e lazer.</p>
-                            <!-- BOTÕES ATUALIZADOS -->
                             <div class="card-actions">
                                 <button class="btn btn-secondary btn-small btn-view-more"><i class="ph-fill ph-info"></i> Detalhes</button>
                                 <button class="btn btn-secondary btn-small btn-cardapio"><i class="ph-fill ph-book-open"></i> Cardápio</button>
@@ -1562,13 +1538,13 @@
                         </div>
                     </article>
 
-                    <!-- Card 4 (Novo) -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
+                    <!-- Card 4 -->
                     <article class="establishment-card" data-category="beber" 
+                             data-id="seo-rosa"
                              data-title="Seo Rosa" 
-                             data-img="https://placehold.co/600x400/e83e8c/FFFFFF?text=Seo+Rosa"
+                             data-img="https://source.unsplash.com/random/600x400?lounge,bar,people"
                              data-desc="Bar e restaurante badalado no Gramado. Famoso pela feijoada aos sábados e pelo ambiente descontraído.">
-                        <div class="card-image" style="background-image: url('https://placehold.co/600x400/e83e8c/FFFFFF?text=Seo+Rosa')"></div>
+                        <div class="card-image" style="background-image: url('https://source.unsplash.com/random/600x400?lounge,bar,people')"></div>
                         <div class="card-content">
                             <div class="card-tags">
                                 <span class="card-tag tag-category">🍸 Beber</span>
@@ -1576,7 +1552,6 @@
                             </div>
                             <h3 class="card-title">Seo Rosa</h3>
                             <p class="card-description">Bar e restaurante badalado no Gramado. Famoso pela feijoada aos sábados e pelo ambiente descontraído.</p>
-                            <!-- BOTÕES ATUALIZADOS -->
                             <div class="card-actions">
                                 <button class="btn btn-secondary btn-small btn-view-more"><i class="ph-fill ph-info"></i> Detalhes</button>
                                 <button class="btn btn-secondary btn-small btn-cardapio"><i class="ph-fill ph-book-open"></i> Cardápio</button>
@@ -1585,13 +1560,13 @@
                         </div>
                     </article>
 
-                    <!-- Card 5 (Novo) -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
+                    <!-- Card 5 -->
                     <article class="establishment-card" data-category="comer" 
+                             data-id="padaria-alema"
                              data-title="Padaria Alemã" 
-                             data-img="https://placehold.co/600x400/c7a008/FFFFFF?text=Padaria+Alem%C3%A3"
+                             data-img="https://source.unsplash.com/random/600x400?bakery,bread,showcase"
                              data-desc="Tradicional em Campinas, oferece pães artesanais, doces incríveis e um café colonial completo.">
-                        <div class="card-image" style="background-image: url('https://placehold.co/600x400/c7a008/FFFFFF?text=Padaria+Alem%C3%A3')"></div>
+                        <div class="card-image" style="background-image: url('https://source.unsplash.com/random/600x400?bakery,bread,showcase')"></div>
                         <div class="card-content">
                             <div class="card-tags">
                                 <span class="card-tag tag-category">🍔 Comer</span>
@@ -1599,7 +1574,6 @@
                             </div>
                             <h3 class="card-title">Padaria Alemã</h3>
                             <p class="card-description">Tradicional em Campinas, oferece pães artesanais, doces incríveis e um café colonial completo.</p>
-                            <!-- BOTÕES ATUALIZADOS -->
                             <div class="card-actions">
                                 <button class="btn btn-secondary btn-small btn-view-more"><i class="ph-fill ph-info"></i> Detalhes</button>
                                 <button class="btn btn-secondary btn-small btn-cardapio"><i class="ph-fill ph-book-open"></i> Cardápio</button>
@@ -1608,13 +1582,13 @@
                         </div>
                     </article>
                     
-                    <!-- Card 6 (Novo) -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
+                    <!-- Card 6 -->
                     <article class="establishment-card" data-category="eventos" 
+                             data-id="castro-mendes"
                              data-title="Teatro Castro Mendes" 
-                             data-img="https://placehold.co/600x400/6f42c1/FFFFFF?text=Teatro+Castro+Mendes"
+                             data-img="https://source.unsplash.com/random/600x400?theater,stage,curtain"
                              data-desc="O principal palco cultural da cidade, recebendo peças de teatro, shows de música e espetáculos de dança.">
-                        <div class="card-image" style="background-image: url('https://placehold.co/600x400/6f42c1/FFFFFF?text=Teatro+Castro+Mendes')"></div>
+                        <div class="card-image" style="background-image: url('https://source.unsplash.com/random/600x400?theater,stage,curtain')"></div>
                         <div class="card-content">
                             <div class="card-tags">
                                 <span class="card-tag tag-category">🎶 Eventos</span>
@@ -1622,7 +1596,6 @@
                             </div>
                             <h3 class="card-title">Teatro Castro Mendes</h3>
                             <p class="card-description">O principal palco cultural da cidade, recebendo peças de teatro, shows de música e espetáculos de dança.</p>
-                            <!-- BOTÕES ATUALIZADOS -->
                             <div class="card-actions">
                                 <button class="btn btn-secondary btn-small btn-view-more"><i class="ph-fill ph-info"></i> Detalhes</button>
                                 <button class="btn btn-secondary btn-small btn-cardapio"><i class="ph-fill ph-book-open"></i> Cardápio</button>
@@ -1634,24 +1607,56 @@
             </section>
 
             <!-- ============================================= -->
+            <!-- == NOVO: Tela CARDÁPIO (Slide Up SPA) ======= -->
+            <!-- ============================================= -->
+            <section class="page slide-up" id="page-cardapio">
+                <header class="app-header">
+                    <i class="ph-fill ph-arrow-left header-back-btn" id="btn-fechar-cardapio"></i>
+                    <span id="cardapio-title">Cardápio</span>
+                </header>
+                
+                <div id="cardapio-content">
+                    <!-- O JS vai preencher aqui -->
+                    <div class="empty-menu-msg">
+                        <i class="ph ph-spinner-gap"></i>
+                        <p>Carregando cardápio...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ============================================= -->
             <!-- == Tela 2: MAPA ============================= -->
             <!-- ============================================= -->
             <section class="page" id="page-mapa">
-                <!-- Header flutuante (do CSS) -->
                 <header class="app-header">
                     <div class="location-display">
                         <i class="ph-fill ph-map-pin-line"></i>
                         <span>Cambuí</span>
                     </div>
-                    <!-- NOVO: Botão de Centralizar (antigo filtro) -->
-                    <div class="filter-button" id="center-map-btn">
-                        <i class="ph-fill ph-navigation-arrow"></i>
+                    <div class="filter-button">
+                        <i class="ph-fill ph-sliders-horizontal"></i>
                     </div>
                 </header>
                 
-                <!-- NOVO: Container do Mapa Leaflet -->
-                <div id="leaflet-map"></div>
-
+                <div id="map-container"></div> <!-- Container limpo para o Leaflet -->
+                    
+                <!-- Popup do Pin -->
+                <div class="pin-popup" id="pin-popup">
+                    <div class="popup-image" id="popup-image"></div>
+                    <div class="popup-info">
+                        <h4 id="popup-title">Nome do Local</h4>
+                        <p id="popup-desc">Categoria e distância</p>
+                    </div>
+                    <div class="popup-action">
+                        <button class="btn btn-primary btn-popup btn-view-more">Ver</button>
+                    </div>
+                </div>
+                
+                <!-- NOVO POPUP DO HEATMAP -->
+                <div id="heatmap-popup">
+                    <h4><i class="ph-fill ph-fire"></i> Em Alta Agora</h4>
+                    <ul id="heatmap-popup-list"></ul>
+                </div>
             </section>
 
             <!-- ============================================= -->
@@ -1724,25 +1729,24 @@
                 <!-- Stories dos Estabelecimentos -->
                 <h3 class="section-title">Stories</h3>
                 <div class="stories-bar">
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
                     <div class="story-item">
-                        <div class="story-avatar" style="background-image: url('https://placehold.co/100x100/0E0E0E/FFD60A?text=BV')"></div>
+                        <div class="story-avatar" style="background-image: url('https://source.unsplash.com/random/100x100?bar,logo')"></div>
                         <span>Bar Vileta</span>
                     </div>
                     <div class="story-item">
-                        <div class="story-avatar" style="background-image: url('https://placehold.co/100x100/e83e8c/FFFFFF?text=SR')"></div>
+                        <div class="story-avatar" style="background-image: url('https://source.unsplash.com/random/100x100?lounge,logo')"></div>
                         <span>Seo Rosa</span>
                     </div>
                     <div class="story-item">
-                        <div class="story-avatar" style="background-image: url('https://placehold.co/100x100/4CAF50/FFFFFF?text=PT')"></div>
+                        <div class="story-avatar" style="background-image: url('https://source.unsplash.com/random/100x100?park,logo')"></div>
                         <span>Taquaral</span>
                     </div>
                     <div class="story-item">
-                        <div class="story-avatar" style="background-image: url('https://placehold.co/100x100/8c1c0a/FFFFFF?text=BR')"></div>
+                        <div class="story-avatar" style="background-image: url('https://source.unsplash.com/random/100x100?restaurant,logo')"></div>
                         <span>Bellini</span>
                     </div>
                     <div class="story-item">
-                        <div class="story-avatar" style="background-image: url('https://placehold.co/100x100/c7a008/FFFFFF?text=PA')"></div>
+                        <div class="story-avatar" style="background-image: url('https://source.unsplash.com/random/100x100?bakery,logo')"></div>
                         <span>P. Alemã</span>
                     </div>
                 </div>
@@ -1752,9 +1756,8 @@
                 
                 <div class="feed-list">
                     <!-- Post 1 (Estabelecimento) -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
                     <article class="tweet-post">
-                        <div class="tweet-avatar" style="background-image: url('https://placehold.co/100x100/e83e8c/FFFFFF?text=SR')"></div>
+                        <div class="tweet-avatar" style="background-image: url('https://source.unsplash.com/random/100x100?lounge,logo')"></div>
                         <div class="tweet-content">
                             <div class="tweet-header">
                                 <h4>Seo Rosa</h4>
@@ -1774,9 +1777,8 @@
                     </article>
                     
                     <!-- Post 2 (Estabelecimento) -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
                     <article class="tweet-post">
-                        <div class="tweet-avatar" style="background-image: url('https://placehold.co/100x100/4CAF50/FFFFFF?text=PT')"></div>
+                        <div class="tweet-avatar" style="background-image: url('https://source.unsplash.com/random/100x100?park,logo')"></div>
                         <div class="tweet-content">
                             <div class="tweet-header">
                                 <h4>Parque Taquaral</h4>
@@ -1794,27 +1796,6 @@
                         </div>
                     </article>
                     
-                    <!-- Post 3 (Estabelecimento) -->
-                    <!-- IMAGENS FICTÍCIAS ATUALIZADAS -->
-                    <article class="tweet-post">
-                        <div class="tweet-avatar" style="background-image: url('https://placehold.co/100x100/0E0E0E/FFD60A?text=BV')"></div>
-                        <div class="tweet-content">
-                            <div class="tweet-header">
-                                <h4>Bar Vileta</h4>
-                                <span>@BarVileta · 3h</span>
-                            </div>
-                            <p class="tweet-text">
-                                Quinta é quase sexta! 🍻 Happy hour rolando solto aqui no Cambuí. Marque os amigos que vão te pagar uma rodada hoje!
-                            </p>
-                            <div class="tweet-actions">
-                                <span class="action-btn action-reply"><i class="ph ph-chat-circle"></i> <span>19</span></span>
-                                <span class="action-btn action-retweet"><i class="ph ph-arrows-counter-clockwise"></i> <span>22</span></span>
-                                <span class="action-btn action-like"><i class="ph ph-heart"></i> <span>89</span></span>
-                                <span class="action-btn action-share"><i class="ph ph-paper-plane-tilt"></i></span>
-                            </div>
-                        </div>
-                    </article>
-                    
                 </div>
             </section>
 
@@ -1823,16 +1804,11 @@
             <!-- ============================================= -->
             <section class="page" id="page-perfil">
                 <div class="profile-header">
-                    <!-- IMAGEM FICTÍCIA ATUALIZADA -->
-                    <div class="avatar" style="background-image: url('https://placehold.co/100x100/FFD60A/0E0E0E?text=LF')"></div>
+                    <div class="avatar" style="background-image: url('https://source.unsplash.com/random/100x100?person,man,portrait')"></div>
                     <div class="profile-info">
                         <h2>Olá, Luis Felipe 👋</h2>
                         <p>Campinas, SP</p>
                     </div>
-                    <!-- NOVO BOTÃO DE EDITAR -->
-                    <button class="btn-icon-header" id="btn-edit-profile">
-                        <i class="ph-fill ph-pencil-simple"></i>
-                    </button>
                 </div>
 
                 <div class="profile-stats">
@@ -1848,11 +1824,6 @@
 
                 <div class="profile-menu">
                     <h3 class="section-title">Minha Conta</h3>
-                    <!-- NOVO BOTÃO DE VER PERFIL -->
-                    <div class="menu-button" id="btn-view-public-profile">
-                        <i class="ph-fill ph-eye"></i>
-                        <span>Ver Perfil Público</span>
-                    </div>
                     <div class="menu-button">
                         <i class="ph-fill ph-bookmarks-simple"></i>
                         <span>Minhas Experiências</span>
@@ -1871,37 +1842,39 @@
                     </div>
                 </div>
 
-                <!-- NOVA SEÇÃO SOCIAL -->
-                <div class="profile-menu" style="margin-top: 20px;">
-                    <h3 class="section-title">Social</h3>
-                    <div class="menu-button" id="btn-add-friend">
-                        <i class="ph-fill ph-user-plus"></i>
-                        <span>Adicionar Amigos</span>
-                    </div>
-                </div>
-
             </section>
 
         </main>
 
-        <!-- Navbar Fixa na Base -->
+        <!-- Navbar Fixa na Base (MODIFICADA) -->
         <nav id="bottom-navbar">
+            <!-- Item 1: Explorar -->
             <div class="nav-item active" data-page="page-explorar">
                 <i class="ph-fill ph-house"></i>
                 <span>Explorar</span>
             </div>
-            <div class="nav-item" data-page="page-mapa">
-                <i class="ph-fill ph-map-trifold"></i>
-                <span>Mapa</span>
-            </div>
+            
+            <!-- Item 2: Clube -->
             <div class="nav-item" data-page="page-clube">
                 <i class="ph-fill ph-medal"></i>
                 <span>Clube</span>
             </div>
+            
+            <!-- Item 3 (Centro): Mapa -->
+            <div class="nav-item center" data-page="page-mapa">
+                <div class="nav-center-circle">
+                    <i class="ph-fill ph-map-trifold"></i>
+                </div>
+                <span>Mapa</span>
+            </div>
+            
+            <!-- Item 4: Feed -->
             <div class="nav-item" data-page="page-feed">
                 <i class="ph-fill ph-chats-circle"></i>
                 <span>Feed</span>
             </div>
+            
+            <!-- Item 5: Perfil -->
             <div class="nav-item" data-page="page-perfil">
                 <i class="ph-fill ph-user-circle"></i>
                 <span>Perfil</span>
@@ -1959,15 +1932,6 @@
     </div>
 
 
-    <!-- NOVO: Leaflet.js (Mapa) -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin=""></script>
-        
-    <!-- NOVO: Plugin Leaflet.heat (Heatmap) -->
-    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-
-
     <script>
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -1993,13 +1957,13 @@
             const carouselDots = document.querySelectorAll('#carousel-pagination .dot');
             let currentSlide = 0;
             const totalSlides = 3;
-            let carouselInterval; // Será definido em startCarousel()
+            let carouselInterval;
 
-            // Filtros (NOVO)
+            // Filtros
             const filterItems = document.querySelectorAll('.filter-item');
             const establishmentCards = document.querySelectorAll('.establishment-card');
             
-            // --- NOVO: Variáveis dos Stories ---
+            // Variáveis dos Stories
             const storyViewer = document.getElementById('story-viewer');
             const storyItems = document.querySelectorAll('.story-item');
             const storyCloseBtn = document.getElementById('story-close-btn');
@@ -2008,64 +1972,108 @@
             const storyUsernameHeader = document.getElementById('story-username-header');
             const storyImageContent = document.getElementById('story-image-content');
             const storyTextContent = document.getElementById('story-text-content');
-            let storyTimeout; // Guarda o timer de 15s
+            let storyTimeout;
 
-            // Dados fictícios para os Stories
-            // IMAGENS FICTÍCIAS ATUALIZADAS
-            const fakeStoriesData = {
-                'Bar Vileta': {
-                    avatar: 'https://placehold.co/100x100/0E0E0E/FFD60A?text=BV',
-                    image: 'https://placehold.co/400x800/0E0E0E/FFFFFF?text=Story+Vileta',
-                    text: 'Só hoje: Chopp em dobro até as 20h! 🍻 #LetsFui'
-                },
-                'Seo Rosa': {
-                    avatar: 'https://placehold.co/100x100/e83e8c/FFFFFF?text=SR',
-                    image: 'https://placehold.co/400x800/e83e8c/FFFFFF?text=Story+Seo+Rosa',
-                    text: 'O sunset mais famoso de Campinas é aqui. DJ ao vivo agora!'
-                },
-                'Taquaral': {
-                    avatar: 'https://placehold.co/100x100/4CAF50/FFFFFF?text=PT',
-                    image: 'https://placehold.co/400x800/4CAF50/FFFFFF?text=Story+Taquaral',
-                    text: 'Dia lindo para uma volta na lagoa! ☀️'
-                },
-                'Bellini': {
-                    avatar: 'https://placehold.co/100x100/8c1c0a/FFFFFF?text=BR',
-                    image: 'https://placehold.co/400x800/8c1c0a/FFFFFF?text=Story+Bellini',
-                    text: 'Nosso novo Risoto de Camarão. Simplesmente divino.'
-                },
-                'P. Alemã': {
-                    avatar: 'https://placehold.co/100x100/c7a008/FFFFFF?text=PA',
-                    image: 'https://placehold.co/400x800/c7a008/FFFFFF?text=Story+P.+Alem%C3%A3',
-                    text: 'Nosso café colonial está servido! Venha provar. 🥐'
-                }
+            // Variáveis do Cardápio Digital (SPA)
+            const pageCardapio = document.getElementById('page-cardapio');
+            const btnFecharCardapio = document.getElementById('btn-fechar-cardapio');
+            const cardapioContent = document.getElementById('cardapio-content');
+            const cardapioTitle = document.getElementById('cardapio-title');
+
+            // Variável do Mapa Leaflet
+            let map; 
+            let mapInitialized = false;
+
+            // --- 0. Banco de Dados dos Cardápios ---
+            const dbCardapios = {
+                "bar-vileta": [
+                    {
+                        categoria: "Petiscos de Boteco",
+                        itens: [
+                            { nome: "Bolinho de Costela", desc: "Massa crocante recheada com costela desfiada e queijo.", preco: "R$ 32,00", promo: true, img: "https://source.unsplash.com/random/200x200?snack,fried" },
+                            { nome: "Dadinho de Tapioca", desc: "Acompanha geleia de pimenta da casa.", preco: "R$ 26,00", img: "https://source.unsplash.com/random/200x200?cheese,snack" },
+                            { nome: "Torresmo de Rolo", desc: "Crocante e suculento, servido com limão cravo.", preco: "R$ 38,00", img: "https://source.unsplash.com/random/200x200?pork,food" }
+                        ]
+                    },
+                    {
+                        categoria: "Bebidas",
+                        itens: [
+                            { nome: "Chopp Brahma", desc: "Caneca gelada 350ml.", preco: "R$ 10,00", img: "https://source.unsplash.com/random/200x200?beer" },
+                            { nome: "Caipirinha de Limão", desc: "Cachaça artesanal ou vodka.", preco: "R$ 22,00", promo: true, img: "https://source.unsplash.com/random/200x200?drink,lime" }
+                        ]
+                    }
+                ],
+                "bellini": [
+                    {
+                        categoria: "Pratos Principais",
+                        itens: [
+                            { nome: "Risoto de Camarão", desc: "Arroz arbóreo, camarões rosa grandes e toque de limão siciliano.", preco: "R$ 89,00", img: "https://source.unsplash.com/random/200x200?risotto,shrimp" },
+                            { nome: "Ossobuco com Polenta", desc: "Cozido lentamente por 12 horas.", preco: "R$ 78,00", img: "https://source.unsplash.com/random/200x200?meat,polenta" }
+                        ]
+                    },
+                    {
+                        categoria: "Sobremesas",
+                        itens: [
+                            { nome: "Tiramisu Clássico", desc: "Receita original italiana com mascarpone.", preco: "R$ 32,00", img: "https://source.unsplash.com/random/200x200?tiramisu" }
+                        ]
+                    }
+                ],
+                "seo-rosa": [
+                    {
+                        categoria: "Para Compartilhar",
+                        itens: [
+                            { nome: "Carpaccio", desc: "Lâminas de carne, alcaparras, parmesão e molho mostarda.", preco: "R$ 54,00", img: "https://source.unsplash.com/random/200x200?carpaccio" },
+                            { nome: "Mini Burgers", desc: "Porção com 6 unidades de cheddar e bacon.", preco: "R$ 48,00", img: "https://source.unsplash.com/random/200x200?burger" }
+                        ]
+                    },
+                    {
+                        categoria: "Drinks",
+                        itens: [
+                            { nome: "Moscow Mule", desc: "Vodka, xarope de gengibre e espuma de limão.", preco: "R$ 34,00", promo: true, img: "https://source.unsplash.com/random/200x200?cocktail" }
+                        ]
+                    }
+                ]
             };
 
-            // --- NOVO: Variáveis do Mapa Leaflet ---
-            let leafletMap = null; // Guarda a instância do mapa
-            let userCoords = null; // Guarda a localização do usuário
-            let userMarker = null; // Guarda o marcador do usuário
-            const fallbackCoords = [-22.9056, -47.0608]; // Campinas
+            // Dados fictícios para os Stories
+            const fakeStoriesData = {
+                'Bar Vileta': { avatar: 'https://source.unsplash.com/random/100x100?bar,logo', image: 'https://source.unsplash.com/random/400x800?beer,cheers', text: 'Só hoje: Chopp em dobro até as 20h! 🍻 #LetsFui' },
+                'Seo Rosa': { avatar: 'https://source.unsplash.com/random/100x100?lounge,logo', image: 'https://source.unsplash.com/random/400x800?dj,party,lights', text: 'O sunset mais famoso de Campinas é aqui. DJ ao vivo agora!' },
+                'Taquaral': { avatar: 'https://source.unsplash.com/random/100x100?park,logo', image: 'https://source.unsplash.com/random/400x800?park,trees,sunny', text: 'Dia lindo para uma volta na lagoa! ☀️' },
+                'Bellini': { avatar: 'https://source.unsplash.com/random/100x100?restaurant,logo', image: 'https://source.unsplash.com/random/400x800?gourmet,food,plate', text: 'Nosso novo Risoto de Camarão. Simplesmente divino.' },
+                'P. Alemã': { avatar: 'https://source.unsplash.com/random/100x100?bakery,logo', image: 'https://source.unsplash.com/random/400x800?pastries,coffee,display', text: 'Nosso café colonial está servido! Venha provar. 🥐' }
+            };
             
             let currentPageId = 'page-explorar';
             let notificationTimer;
-            let userPoints = 420; // Pontos iniciais
-            let userCheckins = 17; // Check-ins iniciais
+            let userPoints = 420; 
+            let userCheckins = 17; 
 
-            // --- 1. Lógica da Splash Screen ---
-            
-            setTimeout(() => {
-                document.getElementById('splash-screen').classList.add('hidden');
-            }, 2000); // 2 segundos de splash
 
-            // --- 1.5. Lógica do Carousel ---
+            // --- Lógica de URL/QR Code ao Iniciar ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const qrEstablishmentId = urlParams.get('id');
+            const showCardapio = urlParams.get('cardapio');
+
+            if (qrEstablishmentId && showCardapio === 'true') {
+                setTimeout(() => {
+                    document.getElementById('splash-screen').classList.add('hidden');
+                    openCardapio(qrEstablishmentId);
+                }, 500);
+            } else {
+                setTimeout(() => {
+                    document.getElementById('splash-screen').classList.add('hidden');
+                }, 2000); 
+            }
+
+
+            // --- 1. Lógica do Carousel ---
             function startCarousel() {
-                // Limpa intervalo anterior para evitar duplicação
                 if(carouselInterval) clearInterval(carouselInterval);
-                
                 carouselInterval = setInterval(() => {
                     currentSlide = (currentSlide + 1) % totalSlides;
                     updateCarousel();
-                }, 4000); // Muda a cada 4 segundos
+                }, 4000);
             }
 
             function updateCarousel() {
@@ -2078,30 +2086,21 @@
                     });
                 }
             }
-            
-            // Inicia o carousel na primeira carga
-            if (carouselWrapper) {
-                startCarousel();
-            }
+            if (carouselWrapper) startCarousel();
 
-            // --- 1.7. Lógica dos Filtros (NOVO) ---
+
+            // --- 1.5. Lógica dos Filtros ---
             filterItems.forEach(item => {
                 item.addEventListener('click', () => {
-                    // 1. Atualiza o estado 'active' no botão
                     filterItems.forEach(i => i.classList.remove('active'));
                     item.classList.add('active');
-                    
                     const filter = item.dataset.filter;
-
-                    // 2. Filtra os cards
                     establishmentCards.forEach(card => {
                         const category = card.dataset.category;
-                        
-                        // Mostra o card se o filtro for 'all' OU se a categoria do card bate com o filtro
                         if (filter === 'all' || category === filter) {
                             card.classList.remove('hidden');
                         } else {
-                            card.classList.add('hidden'); // Esconde
+                            card.classList.add('hidden');
                         }
                     });
                 });
@@ -2109,180 +2108,382 @@
 
 
             // --- 2. Lógica de Navegação SPA ---
-            
             navItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    const pageId = item.dataset.page;
+                item.addEventListener('click', (e) => {
+                    // Pega o elemento .nav-item, mesmo que o clique tenha sido no ícone ou texto
+                    const navItem = e.currentTarget;
+                    const pageId = navItem.dataset.page;
                     navigateTo(pageId);
                 });
             });
 
             function navigateTo(pageId) {
-                if (pageId === currentPageId) return; // Não faz nada se já está na página
+                if (pageId === currentPageId) return;
 
-                // Desativa a página e item antigos
                 const oldPage = document.getElementById(currentPageId);
                 const oldNavItem = document.querySelector(`.nav-item[data-page="${currentPageId}"]`);
                 
                 if (oldPage) oldPage.classList.add('exit');
                 if (oldNavItem) oldNavItem.classList.remove('active');
 
-                // Ativa a nova página e item
                 const newPage = document.getElementById(pageId);
                 const newNavItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
                 
                 if (newPage) {
-                    newPage.classList.remove('exit'); // Garante que não tenha a classe de saída
+                    newPage.classList.remove('exit');
                     newPage.classList.add('active');
-                    // Reseta o scroll da nova página ao entrar
                     newPage.scrollTop = 0;
                 }
                 if (newNavItem) newNavItem.classList.add('active');
 
-                // Limpa a classe 'exit' da página antiga após a transição
                 if(oldPage) {
                     setTimeout(() => {
                         oldPage.classList.remove('active');
                         oldPage.classList.remove('exit');
-                    }, 300); // Mesmo tempo da transição CSS
+                    }, 300);
                 }
 
                 currentPageId = pageId;
 
-                // --- Lógicas Específicas de cada Página ---
-                
-                // Limpa o timer de notificação
                 if (notificationTimer) clearTimeout(notificationTimer);
                 
-                // Pausa/Inicia o carousel
                 if (pageId === 'page-explorar') {
-                    if(carouselWrapper) startCarousel(); // Reinicia
+                    if(carouselWrapper) startCarousel();
                 } else {
                     if(carouselInterval) clearInterval(carouselInterval);
-                    carouselInterval = null; // Limpa o ID do intervalo
+                    carouselInterval = null;
                 }
 
-
-                // Anima a barra de progresso ao entrar no Clube
-                if (pageId === 'page-clube') {
-                    updatePointsDisplay(); // Garante que os pontos estão corretos
+                if (pageId === 'page-mapa') {
+                    // Inicializa o mapa apenas se ainda não foi inicializado
+                    // Pequeno delay para garantir que o container está visível (evita glitch de resize)
                     setTimeout(() => {
-                        const progress = (userPoints / 1000) * 100; // Nível em 1000 pts
+                        initLeafletMap();
+                    }, 100);
+                }
+
+                if (pageId === 'page-clube') {
+                    updatePointsDisplay();
+                    setTimeout(() => {
+                        const progress = (userPoints / 1000) * 100; 
                         const progressFill = document.getElementById('progress-fill');
-                        if (progressFill) {
-                            progressFill.style.width = `${Math.min(progress, 100)}%`;
-                        }
-                    }, 200); // Pequeno delay para a animação
+                        if (progressFill) progressFill.style.width = `${Math.min(progress, 100)}%`;
+                    }, 200);
                 } else {
-                    // Reseta a barra ao sair para animar na próxima vez
                     const progressFill = document.getElementById('progress-fill');
-                    if(progressFill) {
-                        progressFill.style.width = '0%';
-                    }
+                    if(progressFill) progressFill.style.width = '0%';
                 }
 
-                // Dispara notificação inteligente
                 if (pageId === 'page-perfil' || pageId === 'page-mapa') {
-                    notificationTimer = setTimeout(showNotification, 5000); // 5 segundos
+                    notificationTimer = setTimeout(showNotification, 5000);
+                }
+            }
+            
+            
+            // --- NOVA LÓGICA DE MAPA: LEAFLET.JS ---
+            
+            function initLeafletMap() {
+                if (mapInitialized) {
+                    map.invalidateSize(); // Recalcula tamanho caso a div tenha mudado
+                    return;
                 }
 
-                // NOVO: Inicializa o mapa Leaflet na primeira vez que a aba é aberta
-                if (pageId === 'page-mapa' && !leafletMap) {
-                    // Delay de 310ms para esperar a animação da página terminar e o 'div' estar visível
-                    setTimeout(initLeafletMap, 310);
-                }
+                // Coordenadas centrais de Campinas (Cambuí)
+                const center = [-22.8950, -47.0550];
+
+                map = L.map('map-container', {
+                    zoomControl: false, // Vamos reposicionar se necessário, ou deixar sem para mobile clean
+                    attributionControl: false // Oculta atribuição para visual mais limpo (em prod manteríamos)
+                }).setView(center, 15);
+
+                // Tile Layer (Estilo Clean - CartoDB Voyager)
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19
+                }).addTo(map);
+
+                // Dados dos Locais (Geolocalização simulada em Campinas)
+                const locations = [
+                    { title: "Bar Vileta", lat: -22.8920, lng: -47.0510, type: "beber", id: "bar-vileta", img: "https://source.unsplash.com/random/100x100?bar,logo", desc: "🍸 Beber - 600m" },
+                    { title: "Bellini Ristorante", lat: -22.9010, lng: -47.0490, type: "comer", id: "bellini", img: "https://source.unsplash.com/random/100x100?restaurant,logo", desc: "🍔 Comer - 1.8km" },
+                    { title: "Parque Taquaral", lat: -22.8750, lng: -47.0580, type: "ar-livre", id: "taquaral", img: "https://source.unsplash.com/random/100x100?park,logo", desc: "🌳 Ar Livre - 3.2km" },
+                    { title: "Seo Rosa", lat: -22.8980, lng: -47.0530, type: "beber", id: "seo-rosa", img: "https://source.unsplash.com/random/100x100?lounge,logo", desc: "🍸 Beber - 1.1km" }
+                ];
+
+                // Ícone Personalizado (DivIcon para usar Phosphor Icons)
+                const createCustomIcon = () => L.divIcon({
+                    className: 'custom-map-pin',
+                    html: '<i class="ph-fill ph-map-pin"></i>',
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 36] // Ponta do pin no local exato
+                });
+
+                // Adiciona Markers
+                locations.forEach(loc => {
+                    const marker = L.marker([loc.lat, loc.lng], { icon: createCustomIcon() }).addTo(map);
+                    
+                    // Evento de Clique no Pin (Abre Popup Customizado)
+                    marker.on('click', (e) => {
+                        // Centraliza mapa levemente deslocado para dar espaço ao popup
+                        // map.setView([loc.lat + 0.002, loc.lng], 16, { animate: true });
+                        
+                        openPinPopup(loc);
+                    });
+                });
+
+                // Adiciona Heatmaps (Círculos Pulsantes)
+                const heatmaps = [
+                    { lat: -22.8920, lng: -47.0510, color: '#FFD60A', radius: 80, data: [{"name": "Bar Vileta", "checkins": 28}, {"name": "Bellini", "checkins": 19}] },
+                    { lat: -22.8980, lng: -47.0530, color: '#FFD60A', radius: 60, data: [{"name": "Seo Rosa", "checkins": 12}] }
+                ];
+
+                heatmaps.forEach(heat => {
+                    const circle = L.circle([heat.lat, heat.lng], {
+                        color: 'transparent', // Borda invisível
+                        fillColor: heat.color,
+                        fillOpacity: 0.5,
+                        radius: heat.radius,
+                        className: 'heatmap-pulse' // Classe CSS para animação
+                    }).addTo(map);
+
+                    circle.on('click', (e) => {
+                        openHeatmapPopup(heat, e.containerPoint); // Passa posição do clique na tela
+                    });
+                });
+                
+                // Clique no mapa fecha popups
+                map.on('click', () => {
+                    document.getElementById('pin-popup').classList.remove('show');
+                    document.getElementById('heatmap-popup').style.display = 'none';
+                });
+
+                mapInitialized = true;
+            }
+
+            function openPinPopup(data) {
+                const pinPopup = document.getElementById('pin-popup');
+                const popupImage = document.getElementById('popup-image');
+                const popupTitle = document.getElementById('popup-title');
+                const popupDesc = document.getElementById('popup-desc');
+                
+                // Esconde heatmap se aberto
+                document.getElementById('heatmap-popup').style.display = 'none';
+
+                popupTitle.textContent = data.title;
+                popupDesc.textContent = data.desc;
+                popupImage.style.backgroundImage = `url('${data.img}')`;
+                pinPopup.classList.add('show');
+                
+                // Vincula ID para botão "Ver"
+                pinPopup.dataset.id = data.id;
+            }
+
+            function openHeatmapPopup(data, point) {
+                const heatmapPopup = document.getElementById('heatmap-popup');
+                const heatmapPopupList = document.getElementById('heatmap-popup-list');
+                const mapContainer = document.getElementById('map-container');
+                
+                document.getElementById('pin-popup').classList.remove('show');
+
+                heatmapPopupList.innerHTML = '';
+                data.data.forEach(bar => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${bar.name}</strong> - ${bar.checkins} check-ins`;
+                    heatmapPopupList.appendChild(li);
+                });
+
+                // Posicionamento simples no centro da tela para mobile, ou relativo ao clique
+                // Para simplificar em mobile, vamos centralizar ou colocar perto do topo
+                // Mas vamos tentar usar o point do Leaflet
+                
+                // Convertendo lat/lng para pixel position no container
+                const layerPoint = map.latLngToContainerPoint([data.lat, data.lng]);
+                
+                let top = layerPoint.y - 100;
+                let left = layerPoint.x - 100; // Centraliza (width 200)
+
+                // Ajustes de borda
+                if(top < 10) top = 10;
+                if(left < 10) left = 10;
+
+                heatmapPopup.style.top = `${top}px`;
+                heatmapPopup.style.left = `${left}px`;
+                heatmapPopup.style.display = 'block';
             }
 
 
-            // --- 3. Lógica do Modal (Detalhes do Estabelecimento) ---
+            // --- 3. Lógica do Modal e Ações dos Cards ---
             
-            // Precisa usar delegação de evento, pois os botões do mapa são criados dinamicamente
             document.getElementById('app-content').addEventListener('click', (e) => {
                 
-                // Lógica existente de "Ver mais" (Detalhes)
+                // Botão "Ver Cardápio" (NOVA LÓGICA)
+                const menuBtn = e.target.closest('.btn-cardapio');
+                if (menuBtn) {
+                    const card = menuBtn.closest('.establishment-card');
+                    const id = card.dataset.id;
+                    const title = card.dataset.title;
+                    if(id) {
+                        openCardapio(id, title);
+                    } else {
+                        showToast('Cardápio indisponível para este local.', 'error');
+                    }
+                    return; // Para execução aqui
+                }
+
+                // Botão Detalhes (Modal)
                 const viewMoreBtn = e.target.closest('.btn-view-more');
                 if (viewMoreBtn) {
-                    // Pega dados do card pai
-                    const card = e.target.closest('.establishment-card, .pin-popup'); // .pin-popup (do mapa antigo) não existe mais, mas mantemos por segurança
-                    
-                    let title, img, desc, category;
+                    const card = e.target.closest('.establishment-card, .pin-popup');
+                    let title, img, desc, id;
                     
                     if(card && card.classList.contains('establishment-card')) {
                          title = card.dataset.title;
                          img = card.dataset.img;
                          desc = card.dataset.desc;
-                         category = card.dataset.category;
-                    } else {
-                        // Tenta pegar do popup do mapa LEAFLET (se o clique foi lá)
-                        // Esta lógica é complexa, pois o popup do Leaflet é separado.
-                        // O "Ver" do popup do mapa antigo foi removido, então focamos no Card
-                        if (!card) return;
-                    }
-                    
-                    if (!title) return; // Se não achou um título, sai
+                         id = card.dataset.id;
+                    } else if (card && card.classList.contains('pin-popup')) {
+                         const pinTitle = card.querySelector('#popup-title').textContent;
+                         // No novo mapa, os pins são Leaflet markers, não elementos DOM diretos
+                         // Vamos pegar os dados do próprio popup que foi preenchido
+                         title = pinTitle;
+                         // Fallback simples para achar ID baseado no título (em app real usaria ID direto)
+                         const locationMap = { "Bar Vileta": "bar-vileta", "Bellini Ristorante": "bellini", "Parque Taquaral": "taquaral", "Seo Rosa": "seo-rosa" };
+                         id = locationMap[title]; 
+                         
+                         const popupImgEl = document.getElementById('popup-image');
+                         img = popupImgEl.style.backgroundImage.slice(5, -2); // Remove url("")
+                         desc = document.getElementById('popup-desc').textContent;
 
-                    // Preenche o modal
+                    } else {
+                        return;
+                    }
+
                     modalTitle.textContent = title;
+                    // ADICIONADO: Botão "Ver Cardápio" dentro do modal de detalhes
                     modalBody.innerHTML = `
                         <div class="modal-image" style="background-image: url('${img}')"></div>
                         <p>${desc}</p>
                         <h5>Horários</h5>
-                        <p>
-                            Seg - Sex: 18:00 - 00:00<br>
-                            Sáb - Dom: 12:00 - 01:00
-                        </p>
+                        <p>Seg - Sex: 18:00 - 00:00<br>Sáb - Dom: 12:00 - 01:00</p>
+                        
+                        <button class="btn btn-ver-cardapio btn-block" id="modal-details-btn-cardapio">
+                            <i class="ph-fill ph-book-open"></i> Ver Cardápio
+                        </button>
                     `;
-                    modalFooter.innerHTML = `<button class="btn btn-primary btn-block" id="modal-btn-resgatar-cupom">Check-in (+20 pts)</button>`;
+                    modalFooter.innerHTML = `<button class="btn btn-primary btn-block" id="modal-btn-resgatar-cupom">Resgatar Cupom (+20 pts)</button>`;
                     
-                    // Adiciona listener ao novo botão do footer
+                    // Listener para o botão de cardápio DENTRO do modal
+                    const btnDetailsCardapio = document.getElementById('modal-details-btn-cardapio');
+                    if(btnDetailsCardapio) {
+                        btnDetailsCardapio.addEventListener('click', () => {
+                             modalOverlay.classList.remove('visible');
+                             if(id) openCardapio(id, title);
+                        });
+                    }
+
                     document.getElementById('modal-btn-resgatar-cupom').addEventListener('click', () => {
                         addPoints(20);
                         userCheckins++;
-                        if (statCheckinsEl) {
-                            statCheckinsEl.textContent = userCheckins;
-                        }
-                        
-                        // Simula feedback
+                        if (statCheckinsEl) statCheckinsEl.textContent = userCheckins;
                         showToast(`+20 pontos ganhos no ${title}!`, 'success');
                         modalOverlay.classList.remove('visible');
-                    }, { once: true }); // Garante que o listener seja adicionado apenas uma vez
+                    }, { once: true });
 
-                    // Exibe o modal
                     modalOverlay.classList.add('visible');
                 }
 
-                // NOVO: Lógica do Botão "Cupons"
+                // Botão "Cupons"
                 const couponBtn = e.target.closest('.btn-open-coupons');
                 if (couponBtn) {
                     const card = couponBtn.closest('.establishment-card');
                     const title = card.dataset.title;
                     openCouponModal(title);
                 }
-
-                // NOVO: Lógica do Botão "Cardápio"
-                const menuBtn = e.target.closest('.btn-cardapio');
-                if (menuBtn) {
-                    const card = menuBtn.closest('.establishment-card');
-                    const title = card.dataset.title;
-                    openMenuModal(title);
-                }
             });
 
-            // Fechar Modal
+            // --- 4. FUNÇÃO PRINCIPAL: Abrir Cardápio (NOVA) ---
+            
+            function openCardapio(id, title) {
+                // Se não passou título (veio da URL), tenta achar pelo ID (fallback simples)
+                if (!title) {
+                    // Tenta achar no DOM se existir
+                    const card = document.querySelector(`.establishment-card[data-id="${id}"]`);
+                    title = card ? card.dataset.title : "Cardápio";
+                }
+
+                // 1. Configura Header
+                cardapioTitle.textContent = title;
+                cardapioContent.innerHTML = ''; // Limpa
+
+                // 2. Busca dados
+                const data = dbCardapios[id];
+
+                if (!data) {
+                    cardapioContent.innerHTML = `
+                        <div class="empty-menu-msg">
+                            <i class="ph ph-smiley-sad"></i>
+                            <p>Cardápio digital ainda não disponível para este local.</p>
+                        </div>
+                    `;
+                } else {
+                    // 3. Renderiza Categorias e Itens
+                    data.forEach(cat => {
+                        const categoryHtml = document.createElement('div');
+                        categoryHtml.innerHTML = `<h4 class="menu-category-header">${cat.categoria}</h4>`;
+                        cardapioContent.appendChild(categoryHtml);
+
+                        const itemsContainer = document.createElement('div');
+                        itemsContainer.className = 'menu-items-container';
+
+                        cat.itens.forEach(item => {
+                            const itemCard = document.createElement('article');
+                            itemCard.className = 'menu-item-card';
+                            
+                            // HTML do Item
+                            itemCard.innerHTML = `
+                                ${item.promo ? '<span class="promo-tag">Promoção</span>' : ''}
+                                ${item.img ? `<div class="menu-item-img" style="background-image: url('${item.img}')"></div>` : ''}
+                                <div class="menu-item-info">
+                                    <h5 class="menu-item-name">${item.nome}</h5>
+                                    <p class="menu-item-desc">${item.desc}</p>
+                                    <span class="menu-item-price">${item.preco}</span>
+                                </div>
+                            `;
+                            itemsContainer.appendChild(itemCard);
+                        });
+                        cardapioContent.appendChild(itemsContainer);
+                    });
+                }
+
+                // 4. Animação de Entrada
+                // Se estivermos em outra página, transição.
+                pageCardapio.classList.add('active');
+                
+                // Desativa a página atual (qualquer que seja)
+                if (currentPageId !== 'page-cardapio') {
+                    const oldPage = document.getElementById(currentPageId);
+                    // Não removemos 'active' imediatamente para permitir ver o cardápio subindo por cima
+                    // Mas para lógica de estado, atualizamos a variável
+                }
+            }
+
+            // Fechar Cardápio (Botão Voltar)
+            btnFecharCardapio.addEventListener('click', () => {
+                pageCardapio.classList.remove('active');
+                // Se viemos direto por URL/QR code, voltar pode levar para Explorar
+                // Se já estávamos no app, a página de baixo continua lá.
+            });
+
+
+            // --- Restante da Lógica (Modal, Clube, Mapa, etc) Mantida ---
+
             if (modalCloseBtn) {
                 modalCloseBtn.addEventListener('click', () => modalOverlay.classList.remove('visible'));
             }
             if (modalOverlay) {
                 modalOverlay.addEventListener('click', (e) => {
-                    // Fecha ao clicar fora do conteúdo
-                    if (e.target === modalOverlay) {
-                        modalOverlay.classList.remove('visible');
-                    }
+                    if (e.target === modalOverlay) modalOverlay.classList.remove('visible');
                 });
             }
-
-
-            // --- 4. Lógica da Tela "Clube" (Resgatar Recompensa) ---
 
             document.querySelectorAll('.btn-resgatar-recompensa').forEach(button => {
                 button.addEventListener('click', (e) => {
@@ -2296,12 +2497,10 @@
                     const rewardTitle = rewardTitleEl.textContent;
                     
                     if (userPoints >= cost) {
-                        // Tem pontos
                         userPoints -= cost;
                         updatePointsDisplay();
                         showQrCodeModal(rewardTitle, cost);
                     } else {
-                        // Não tem pontos
                         showToast("Ops! Pontos insuficientes.", 'error');
                     }
                 });
@@ -2317,56 +2516,9 @@
                     </p>
                 `;
                 modalFooter.innerHTML = `<button class="btn btn-secondary btn-block" id="modal-btn-fechar-qr">Fechar</button>`;
-                
                 document.getElementById('modal-btn-fechar-qr').addEventListener('click', () => {
                      modalOverlay.classList.remove('visible');
                 }, { once: true });
-                
-                modalOverlay.classList.add('visible');
-            }
-
-            // --- NOVO: Funções do Modal de Cardápio e Cupons ---
-
-            function openMenuModal(title) {
-                modalTitle.textContent = `Cardápio - ${title}`;
-                modalBody.innerHTML = `
-                    <div class="menu-list">
-                        <h4 class="menu-category">Entradas</h4>
-                        <div class="menu-list-item">
-                            <span>Bruschetta Clássica</span>
-                            <span>R$ 28,00</span>
-                        </div>
-                        <div class="menu-list-item">
-                            <span>Porção de Fritas (Cheddar e Bacon)</span>
-                            <span>R$ 35,00</span>
-                        </div>
-                        
-                        <h4 class="menu-category">Principais</h4>
-                        <div class="menu-list-item">
-                            <span>Burger da Casa (Angus 180g)</span>
-                            <span>R$ 42,00</span>
-                        </div>
-                        <div class="menu-list-item">
-                            <span>Risoto de Cogumelos</span>
-                            <span>R$ 55,00</span>
-                        </div>
-                        <div class="menu-list-item">
-                            <span>Parrillada (2 pessoas)</span>
-                            <span>R$ 120,00</span>
-                        </div>
-
-                        <h4 class="menu-category">Bebidas</h4>
-                        <div class="menu-list-item">
-                            <span>Chopp Brahma (300ml)</span>
-                            <span>R$ 10,00</span>
-                        </div>
-                        <div class="menu-list-item">
-                            <span>Gin Tônica</span>
-                            <span>R$ 30,00</span>
-                        </div>
-                    </div>
-                `;
-                modalFooter.innerHTML = ''; // Sem footer para o cardápio
                 modalOverlay.classList.add('visible');
             }
 
@@ -2375,9 +2527,8 @@
                 modalBody.innerHTML = `
                     <p style="margin-bottom: 20px;">Aproveite estas ofertas exclusivas! Mostre o QR Code ao resgatar.</p>
                         <div class="coupon-list">
-                        <!-- Cupom 1 -->
                         <div class="coupon-item">
-                            <div class="coupon-item-img" style="background-image: url('https://placehold.co/100x100/75c1d1/FFFFFF?text=Gin')"></div>
+                            <div class="coupon-item-img" style="background-image: url('https://source.unsplash.com/random/100x100?gin,tonic')"></div>
                             <div class="coupon-item-info">
                                 <h5>Gin Tônica em Dobro</h5>
                                 <p>Válido às terças e quartas</p>
@@ -2388,9 +2539,8 @@
                                 Resgatar
                             </button>
                         </div>
-                        <!-- Cupom 2 -->
                         <div class="coupon-item">
-                            <div class="coupon-item-img" style="background-image: url('https://placehold.co/100x100/d9534f/FFFFFF?text=Burger')"></div>
+                            <div class="coupon-item-img" style="background-image: url('https://source.unsplash.com/random/100x100?burger,plate')"></div>
                             <div class="coupon-item-info">
                                 <h5>20% OFF no Burger da Casa</h5>
                                 <p>Apenas no almoço (12h-15h)</p>
@@ -2401,63 +2551,18 @@
                                 Resgatar
                             </button>
                         </div>
-                        <!-- Cupom 3 -->
-                        <div class="coupon-item">
-                            <div class="coupon-item-img" style="background-image: url('https://placehold.co/100x100/FFD60A/0E0E0E?text=Fritas')"></div>
-                            <div class="coupon-item-info">
-                                <h5>Porção de Fritas Grátis</h5>
-                                <p>Acima de R$ 100,00 em consumo</p>
-                            </div>
-                            <button class="btn btn-primary btn-resgatar-cupom-item" 
-                                    data-coupon-name="Porção de Fritas Grátis" 
-                                    data-coupon-code="${generateAlphanumericCode()}">
-                                Resgatar
-                            </button>
-                        </div>
-                        <!-- Cupom 4 -->
-                        <div class="coupon-item">
-                            <div class="coupon-item-img" style="background-image: url('https://placehold.co/100x100/e83e8c/FFFFFF?text=Bolo')"></div>
-                            <div class="coupon-item-info">
-                                <h5>Sobremesa Grátis</h5>
-                                <p>No seu aniversário</p>
-                            </div>
-                            <button class="btn btn-primary btn-resgatar-cupom-item" 
-                                    data-coupon-name="Sobremesa Grátis" 
-                                    data-coupon-code="${generateAlphanumericCode()}">
-                                Resgatar
-                            </button>
-                        </div>
-                        <!-- Cupom 5 -->
-                        <div class="coupon-item">
-                            <div class="coupon-item-img" style="background-image: url('https://placehold.co/100x100/f0ad4e/FFFFFF?text=Cerveja')"></div>
-                            <div class="coupon-item-info">
-                                <h5>Balde de Cerveja (Pague 5, Leve 6)</h5>
-                                <p>Qualquer dia, qualquer hora</p>
-                            </div>
-                            <button class="btn btn-primary btn-resgatar-cupom-item" 
-                                    data-coupon-name="Balde de Cerveja" 
-                                    data-coupon-code="${generateAlphanumericCode()}">
-                                Resgatar
-                            </button>
-                        </div>
                     </div>
                 `;
                 modalFooter.innerHTML = '';
-
-                // Adiciona listeners para os botões "Resgatar" DENTRO do modal
-                // É preciso fazer isso toda vez que o modal é criado
                 modalBody.querySelectorAll('.btn-resgatar-cupom-item').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         const itemName = e.target.dataset.couponName;
                         const itemCode = e.target.dataset.couponCode;
-                        // Adiciona pontos por resgatar
                         addPoints(5);
                         showToast('+5 pontos por resgatar cupom!', 'success');
-                        // Mostra o QR Code
                         showFinalQRCode(itemName, itemCode);
                     });
                 });
-
                 modalOverlay.classList.add('visible');
             }
 
@@ -2471,14 +2576,13 @@
                     </div>
                 `;
                 modalFooter.innerHTML = `<button class="btn btn-secondary btn-block" id="modal-btn-fechar-qr">Fechar</button>`;
-                
                 document.getElementById('modal-btn-fechar-qr').addEventListener('click', () => {
                      modalOverlay.classList.remove('visible');
                 }, { once: true });
             }
 
             function generateAlphanumericCode(length = 6) {
-                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Caracteres fáceis de ler
+                const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
                 let result = 'FUI-';
                 for (let i = 0; i < length; i++) {
                     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -2486,153 +2590,6 @@
                 return result;
             }
 
-            // --- FIM: Novas Funções de Modal ---
-
-
-            // --- 5. NOVO: Lógica do Mapa Leaflet ---
-
-            function initLeafletMap() {
-                try {
-                    // Previne re-inicialização
-                    if (leafletMap) {
-                        leafletMap.invalidateSize(); // Apenas ajusta o tamanho se já existir
-                        return;
-                    }
-
-                    leafletMap = L.map('leaflet-map', {
-                        zoomControl: false // Desativa o controle de zoom padrão
-                    });
-
-                    // Adiciona a camada de mapa (Tile Layer) - Tema CLARO (Positron)
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                        maxZoom: 19,
-                        minZoom: 12 // Limita o zoom out
-                    }).addTo(leafletMap);
-
-                    // --- Dados fictícios de eventos (Baseado nos cards) ---
-                    const eventosData = [
-                        { coords: [-22.8950, -47.0460], intensity: 0.7, name: "Jantar no Bellini Ristorante", type: "Comer", time: "20:00" },
-                        { coords: [-22.8799, -47.0495], intensity: 0.8, name: "Piquenique no Parque Taquaral", type: "Ar Livre", time: "16:00" },
-                        { coords: [-22.8943, -47.0456], intensity: 0.9, name: "Happy Hour no Seo Rosa", type: "Beber", time: "18:00" },
-                        { coords: [-22.8980, -47.0510], intensity: 0.6, name: "Café na Padaria Alemã", type: "Comer", time: "15:00" },
-                        { coords: [-22.9113, -47.0683], intensity: 0.7, name: "Peça no Teatro Castro Mendes", type: "Eventos", time: "20:00" },
-                        // Ponto mais "quente"
-                        { coords: [-22.9056, -47.0608], intensity: 1.0, name: "Happy Hour no Bar Vileta", type: "Beber", time: "18:00" },
-                        { coords: [-22.9058, -47.0605], intensity: 1.0, name: "Samba no Vileta", type: "Música ao vivo", time: "19:00" }
-                    ];
-                    
-                    // Extrai dados para a camada de calor
-                    const heatData = eventosData.map(e => [...e.coords, e.intensity]);
-
-                    // Configuração do Heatmap (Tema Let's Fui)
-                    const heatLayer = L.heatLayer(heatData, {
-                        radius: 35,
-                        blur: 20,
-                        maxZoom: 17,
-                        gradient: {
-                            0.4: 'rgba(255, 214, 10, 0.5)', // Amarelo (primary)
-                            0.8: 'rgba(255, 165, 0, 0.8)', // Laranja
-                            1.0: 'rgba(255, 69, 0, 1.0)'  // Vermelho-Laranja
-                        }
-                    }).addTo(leafletMap);
-
-                    // --- Geolocalização ---
-                    const onLocationFound = (e) => {
-                        userCoords = e.latlng;
-                        leafletMap.flyTo(userCoords, 16);
-                        
-                        // Adiciona marcador personalizado
-                        if (!userMarker) {
-                            const userIcon = L.divIcon({
-                                className: 'lets-fui-user-marker',
-                                iconSize: [22, 22]
-                            });
-                            userMarker = L.marker(userCoords, { icon: userIcon }).addTo(leafletMap)
-                                .bindPopup("<b>Você está aqui!</b>");
-                            setTimeout(() => userMarker.openPopup(), 1000);
-                        } else {
-                            userMarker.setLatLng(userCoords);
-                        }
-                    };
-
-                    const onLocationError = () => {
-                        console.warn("Geolocalização negada. Usando localização padrão (Campinas).");
-                        leafletMap.setView(fallbackCoords, 14);
-                        L.popup()
-                         .setLatLng(fallbackCoords)
-                         .setContent('<b>Bem-vindo ao Let\'s Fui!</b><br>Permita a localização para ver sua área.')
-                         .openOn(leafletMap);
-                    };
-
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => onLocationFound({ latlng: L.latLng(position.coords.latitude, position.coords.longitude) }),
-                        onLocationError
-                    );
-
-                    // --- Botão de Centralizar (Reutilizando o de filtro) ---
-                    const centerMapBtn = document.getElementById('center-map-btn');
-                    if (centerMapBtn) {
-                        centerMapBtn.addEventListener('click', () => {
-                            if (userCoords) {
-                                leafletMap.flyTo(userCoords, 16, { animate: true, duration: 1.0 });
-                            } else {
-                                leafletMap.flyTo(fallbackCoords, 14, { animate: true, duration: 1.0 });
-                                showToast("Não encontramos sua localização. Mostrando Campinas.", "default");
-                            }
-                        });
-                    }
-
-                    // --- Lógica de Popup de Eventos ---
-                    leafletMap.on('click', function(e) {
-                        const clickedPoint = e.latlng;
-                        const nearbyEvents = [];
-                        
-                        eventosData.forEach(evento => {
-                            const eventPoint = L.latLng(evento.coords[0], evento.coords[1]);
-                            // Raio de 1km para "clicar" em um evento
-                            if (clickedPoint.distanceTo(eventPoint) < 1000) { 
-                                nearbyEvents.push(evento);
-                            }
-                        });
-
-                        if (nearbyEvents.length > 0) {
-                            const cardsHtml = nearbyEvents.map(evento => `
-                                <div class="event-card">
-                                    <h4>${evento.name}</h4>
-                                    <p>${evento.type} ・ ${evento.time}</p>
-                                </div>
-                            `).join('');
-
-                            const popupContent = `
-                                <div>
-                                    <h3>🔥 Bombando por aqui!</h3>
-                                    <div class="popup-events-container">
-                                        ${cardsHtml}
-                                    </div>
-                                </div>
-                            `;
-                            
-                            L.popup({ maxHeight: 250 })
-                             .setLatLng(clickedPoint)
-                             .setContent(popupContent)
-                             .openOn(leafletMap);
-                        }
-                    });
-
-                } catch (error) {
-                    console.error("Erro ao inicializar o mapa Leaflet:", error);
-                    const mapDiv = document.getElementById('leaflet-map');
-                    if(mapDiv) {
-                        mapDiv.innerHTML = '<p style="padding: 20px; text-align: center; margin-top: 100px;">Erro ao carregar o mapa. Tente recarregar.</p>';
-                    }
-                }
-            } // Fim de initLeafletMap()
-
-
-            // --- 6. Lógica da Tela "Feed" (Like) --- (MODIFICADO)
-            
-            // Usa delegação de evento na página do feed
             const pageFeed = document.getElementById('page-feed');
             if (pageFeed) {
                 pageFeed.addEventListener('click', (e) => {
@@ -2646,11 +2603,9 @@
             function toggleLike(btn) {
                 btn.classList.toggle('liked');
                 const icon = btn.querySelector('i');
-                const countEl = btn.querySelector('span'); // Pega o <span> dentro do botão
+                const countEl = btn.querySelector('span');
                 if (!icon || !countEl) return;
-                
                 let count = parseInt(countEl.textContent);
-                
                 if (btn.classList.contains('liked')) {
                     icon.className = 'ph-fill ph-heart';
                     count++;
@@ -2658,57 +2613,41 @@
                     icon.className = 'ph ph-heart';
                     count--;
                 }
-                countEl.textContent = `${count}`; // Atualiza o <span>
+                countEl.textContent = `${count}`;
             }
-            
-
-            // --- 7. Lógica da "Notificação Inteligente" (Toast) ---
             
             const toast = document.getElementById('notification-toast');
             function showNotification() {
                 if (toast) {
                     toast.classList.add('show');
-                    // Esconde após 4 segundos
                     setTimeout(() => {
                         toast.classList.remove('show');
                     }, 4000);
                 }
             }
             
-            // Função genérica de Toast (para feedbacks)
             function showToast(message, type = 'default') {
                 const genericToast = document.createElement('div');
-                genericToast.id = 'notification-toast'; // Reusa o estilo
+                genericToast.id = 'notification-toast';
                 genericToast.textContent = message;
-                
-                if(type === 'error') {
-                    genericToast.style.background = '#ff3b30'; // Vermelho
-                }
-                if(type === 'success') {
-                    genericToast.style.background = '#34c759'; // Verde
-                }
-                
+                if(type === 'error') genericToast.style.background = '#ff3b30';
+                if(type === 'success') genericToast.style.background = '#34c759';
                 const appContainer = document.getElementById('app-container');
                 if (!appContainer) return;
-                
                 appContainer.appendChild(genericToast);
-                
-                // Força o 'reflow' para a animação funcionar
                 requestAnimationFrame(() => {
                     genericToast.classList.add('show');
                 });
-                
                 setTimeout(() => {
                     genericToast.classList.remove('show');
                     setTimeout(() => {
                         genericToast.remove();
-                    }, 500); // Remove do DOM após a animação de saída
+                    }, 500);
                 }, 3000);
             }
             
 
-            // --- 8. NOVO: Lógica dos Stories ---
-
+            // --- Lógica dos Stories ---
             storyItems.forEach(item => {
                 item.addEventListener('click', () => {
                     const establishmentName = item.querySelector('span').textContent;
@@ -2719,75 +2658,48 @@
             function openStory(name) {
                 const data = fakeStoriesData[name];
                 if (!data || !storyViewer) return;
-
-                // Preenche o conteúdo do story
                 storyAvatarHeader.style.backgroundImage = `url('${data.avatar}')`;
                 storyUsernameHeader.textContent = name;
                 storyImageContent.style.backgroundImage = `url('${data.image}')`;
                 storyTextContent.textContent = data.text;
-
-                // Mostra o visualizador
                 storyViewer.classList.add('visible');
-
-                // Reseta a animação da barra
                 storyProgressFill.classList.remove('filling');
-                // Força o reflow (importante para reiniciar a animação CSS)
                 void storyProgressFill.offsetWidth; 
                 storyProgressFill.classList.add('filling');
-
-                // Limpa timer anterior (segurança)
                 if (storyTimeout) clearTimeout(storyTimeout);
-
-                // Define timer para fechar automaticamente
                 storyTimeout = setTimeout(() => {
                     closeStory();
-                }, 15000); // 15 segundos
+                }, 15000);
             }
 
             function closeStory() {
                 if (!storyViewer) return;
-                
                 storyViewer.classList.remove('visible');
-                storyProgressFill.classList.remove('filling'); // Para a animação
-                
-                // Limpa o timer de fechamento automático
+                storyProgressFill.classList.remove('filling');
                 if (storyTimeout) clearTimeout(storyTimeout);
             }
-
-            // Listener para o botão de fechar
-            if (storyCloseBtn) {
-                storyCloseBtn.addEventListener('click', closeStory);
-            }
+            if (storyCloseBtn) storyCloseBtn.addEventListener('click', closeStory);
 
 
-            // --- 9. Funções Utilitárias --- (Era 8)
-            
+            // --- Funções Utilitárias ---
             function updatePointsDisplay() {
                 if (!userPointsEl || !statPontosEl) return;
-                
-                // Anima os pontos mudando
                 const startPoints = parseInt(userPointsEl.textContent) || 0;
                 const diff = userPoints - startPoints;
-                
                 if(diff === 0) return;
-
-                let duration = 500; // 0.5s
+                let duration = 500; 
                 let startTime = null;
-
                 function animate(timestamp) {
                     if (!startTime) startTime = timestamp;
                     const elapsed = timestamp - startTime;
                     const progress = Math.min(elapsed / duration, 1);
-                    
                     const currentAnimatedPoints = Math.floor(startPoints + (diff * progress));
-                    
                     userPointsEl.textContent = currentAnimatedPoints;
                     statPontosEl.textContent = currentAnimatedPoints;
-                    
                     if (progress < 1) {
                         requestAnimationFrame(animate);
                     } else {
-                        userPointsEl.textContent = userPoints; // Garante valor final
+                        userPointsEl.textContent = userPoints; 
                         statPontosEl.textContent = userPoints;
                     }
                 }
@@ -2797,123 +2709,6 @@
             function addPoints(pointsToAdd) {
                 userPoints += pointsToAdd;
                 updatePointsDisplay();
-            }
-
-            // --- 10. NOVAS: Lógica de Modais do Perfil ---
-            const btnEditProfile = document.getElementById('btn-edit-profile');
-            const btnViewPublicProfile = document.getElementById('btn-view-public-profile');
-            const btnAddFriend = document.getElementById('btn-add-friend');
-
-            if (btnEditProfile) {
-                btnEditProfile.addEventListener('click', openEditProfileModal);
-            }
-            if (btnViewPublicProfile) {
-                btnViewPublicProfile.addEventListener('click', openViewProfileModal);
-            }
-            if (btnAddFriend) {
-                btnAddFriend.addEventListener('click', openAddFriendModal);
-            }
-
-            function openEditProfileModal() {
-                modalTitle.textContent = "Editar Perfil";
-                modalBody.innerHTML = `
-                    <div class="form-group">
-                        <label for="profile-name">Nome</label>
-                        <input type="text" id="profile-name" value="Luis Felipe">
-                    </div>
-                    <div class="form-group">
-                        <label for="profile-bio">Bio</label>
-                        <textarea id="profile-bio" placeholder="Escreva um pouco sobre você...">Explorador de Campinas. Amante de um bom café e música ao vivo.</textarea>
-                    </div>
-                `;
-                modalFooter.innerHTML = `<button class="btn btn-primary btn-block" id="btn-save-profile">Salvar Alterações</button>`;
-                
-                // Listener para o botão Salvar
-                document.getElementById('btn-save-profile').addEventListener('click', () => {
-                    showToast("Perfil salvo com sucesso!", "success");
-                    modalOverlay.classList.remove('visible');
-                }, { once: true });
-                
-                modalOverlay.classList.add('visible');
-            }
-
-            function openViewProfileModal() {
-                modalTitle.textContent = "Perfil de Luis Felipe";
-                modalBody.innerHTML = `
-                    <div class="modal-image" style="background-image: url('https://placehold.co/600x400/FFD60A/0E0E0E?text=Capa+Perfil')"></div>
-                    <h5>Bio</h5>
-                    <p class="profile-modal-bio">Explorador de Campinas. Amante de um bom café e música ao vivo.</p>
-                    
-                    <h5>Últimos Check-ins</h5>
-                    <div class="check-in-list">
-                        <div class="check-in-item">
-                            <div class="check-in-item-icon"><i class="ph-fill ph-map-pin"></i></div>
-                            <div class="check-in-item-info">
-                                <p>Bar Vileta</p>
-                                <span>2 horas atrás</span>
-                            </div>
-                        </div>
-                        <div class="check-in-item">
-                            <div class="check-in-item-icon"><i class="ph-fill ph-tree"></i></div>
-                            <div class="check-in-item-info">
-                                <p>Parque Taquaral</p>
-                                <span>Ontem</span>
-                            </div>
-                        </div>
-                        <div class="check-in-item">
-                            <div class="check-in-item-icon"><i class="ph-fill ph-pizza"></i></div>
-                            <div class="check-in-item-info">
-                                <p>Bellini Ristorante</p>
-                                <span>3 dias atrás</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                modalFooter.innerHTML = `<button class="btn btn-secondary btn-block" id="btn-close-modal-view">Fechar</button>`;
-                
-                document.getElementById('btn-close-modal-view').addEventListener('click', () => {
-                    modalOverlay.classList.remove('visible');
-                }, { once: true });
-
-                modalOverlay.classList.add('visible');
-            }
-
-            function openAddFriendModal() {
-                modalTitle.textContent = "Adicionar Amigos";
-                modalBody.innerHTML = `
-                    <p>Procure por amigos pelo nome de usuário ou e-mail.</p>
-                    <div class="form-group">
-                        <label for="friend-search">Buscar</label>
-                        <input type="search" id="friend-search" placeholder="Ex: @maria.silva">
-                    </div>
-                    
-                    <h5>Sugestões</h5>
-                    <div class="friend-list">
-                        <div class="friend-item">
-                            <div class="avatar-small" style="background-image: url('https://placehold.co/100x100/e83e8c/FFFFFF?text=MS')"></div>
-                            <div class="friend-item-info">
-                                <p>Maria Silva</p>
-                                <span>@maria.silva</span>
-                            </div>
-                            <button class="btn btn-primary btn-small"><i class="ph-fill ph-user-plus"></i></button>
-                        </div>
-                        <div class="friend-item">
-                            <div class="avatar-small" style="background-image: url('https://placehold.co/100x100/0E0E0E/FFFFFF?text=JS')"></div>
-                            <div class="friend-item-info">
-                                <p>João Souza</p>
-                                <span>@joaosouza</span>
-                            </div>
-                            <button class="btn btn-primary btn-small"><i class="ph-fill ph-user-plus"></i></button>
-                        </div>
-                    </div>
-                `;
-                modalFooter.innerHTML = `<button class="btn btn-secondary btn-block" id="btn-close-modal-add">Fechar</button>`;
-
-                document.getElementById('btn-close-modal-add').addEventListener('click', () => {
-                    modalOverlay.classList.remove('visible');
-                }, { once: true });
-
-                modalOverlay.classList.add('visible');
             }
 
         });
